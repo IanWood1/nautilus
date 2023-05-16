@@ -581,6 +581,19 @@ handle_attach (char * buf, void * priv)
             return 0;
         }
 #endif
+    } else if (!strcmp(type,"fatfs")) {
+#ifndef NAUT_CONFIG_FATFS_FILESYSTEM_DRIVER 
+        nk_vc_printf("Not compiled with FATFS support, cannot attach\n");
+        return -1;
+#else
+        if (nk_fs_fatfs_attach(devname,fsname,0)) {
+            nk_vc_printf("Failed to attach %s as fatfs volume with name %s\n", devname,fsname);
+            return -1;
+        } else {
+            nk_vc_printf("Device %s attached as fatfs volume with name %s\n", devname,fsname);
+            return 0;
+        }
+#endif
     } else {
         nk_vc_printf("FS type %s is not supported\n", type);
         return -1;

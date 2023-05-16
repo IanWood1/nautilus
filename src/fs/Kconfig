@@ -26,6 +26,19 @@ config DEBUG_FAT32_FILESYSTEM_DRIVER
         help
                 Turn on debug prints for the FAT32 filesystem
 
+config FATFS_FILESYSTEM_DRIVER
+	bool "Enable FATFS"
+	default n
+	help
+		Adds FATFS support
+
+config DEBUG_FATFS_FILESYSTEM_DRIVER
+	bool "Debug FATFS filesystem"
+	default n
+	depends on DEBUG_PRINTS && FATFS_FILESYSTEM_DRIVER
+		help
+				Turn on debug prints for the FATFS filesystem
+
 endmenu
 
     

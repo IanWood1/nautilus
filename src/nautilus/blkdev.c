@@ -195,6 +195,8 @@ int nk_block_dev_write(struct nk_block_dev *dev,
     struct nk_dev *d = (struct nk_dev *)(&(dev->dev));
     struct nk_block_dev_int *di = (struct nk_block_dev_int *)(d->interface);
     DEBUG("write %s (start=%lu, count=%lu, type=%lx\n", d->name,blocknum,count,type);
+    DEBUG_PRINT("HERE3 di->write_blocks=%p, d->state=%p, blocknum=%lu, count=%lu, src=%p, callback=%p, state=%p\n", di->write_blocks, d->state, blocknum, count, src, callback, state);
+
     switch (type) {
     case NK_DEV_REQ_CALLBACK:
 	if (!di->write_blocks) { 
@@ -206,21 +208,28 @@ int nk_block_dev_write(struct nk_block_dev *dev,
 	break;
     case NK_DEV_REQ_BLOCKING:
     case NK_DEV_REQ_NONBLOCKING: {
+
 	if (!di->write_blocks) { 
 	    DEBUG("writeblocks is not possible\n");
 	    return -1;
 	} else {
+    DEBUG_PRINT("HERE3 di->write_blocks=%p, d->state=%p, blocknum=%lu, count=%lu, src=%p, callback=%p, state=%p\n", di->write_blocks, d->state, blocknum, count, src, callback, state);
+
 	    volatile struct op o;
 
 	    o.completed = 0;
 	    o.status = 0;
 	    o.dev = dev;
-    
+
 	    if (type==NK_DEV_REQ_NONBLOCKING) {
 		if (di->write_blocks(d->state,blocknum,count,src,0,0)) {
+    DEBUG_PRINT("HERE4\n");
+
 		    ERROR("failed to start up writeblocks\n");
 		    return -1;
 		} else {
+    DEBUG_PRINT("HERE5\n");
+
 		    DEBUG("readblocks started\n");
 		    return 0;
 		}
