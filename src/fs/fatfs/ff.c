@@ -23,7 +23,7 @@
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
 #include "fatfs.h"
-extern void* fatfs_global_state;
+extern void* fatfs_global_state[3];
 
 /*--------------------------------------------------------------------------
 

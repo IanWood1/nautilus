@@ -6,37 +6,39 @@
 
 #include "fatfs.h"
 
-typedef struct fatfs_pdrv_to_blkdev{
-    int pdrv;
-    struct nk_block_dev *dev;
-} fatfs_pdrv_to_blkdev;
-
 typedef struct fatfs_state{
     struct nk_block_dev_characteristics chars;
     struct nk_block_dev *dev;
     struct nk_fs *fs;
     FATFS *fatfs;
-    fatfs_pdrv_to_blkdev **pdrv_to_blkdev;
     int num_pdrv;
 } fatfs_state;
 
-void* fatfs_global_state;
+void* fatfs_global_state[3] = {NULL, NULL, NULL};
+
+void store_fatfs_state(void* state) {
+    fatfs_state *fs_state = (fatfs_state*)state;
+    BYTE pdrv = fs_state->fatfs->pdrv;
+    fatfs_global_state[pdrv] = state;
+}
+
 
 int fatfs_stat_path(void *state, char *path, struct nk_fs_stat *st)
 {
-    DEBUG_PRINT("fatfs_stat_path\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_stat_path\n");
+    store_fatfs_state(state);
+    
 
     FILINFO* fno = malloc(sizeof(FILINFO));
     if (!fno) {
-        ERROR_PRINT("fatfs_stat_path: malloc failed\n");
+        ERROR("fatfs_stat_path: malloc failed\n");
         return -1;
     }
     memset(fno, 0, sizeof(FILINFO));
 
     FRESULT res = f_stat(path, fno);
     if (res != FR_OK) {
-        ERROR_PRINT("fatfs_stat_path: f_stat failed with error %d\n", res);
+        ERROR("fatfs_stat_path: f_stat failed with error %d\n", res);
         return -1;
     }
     st->st_size = fno->fsize;
@@ -45,17 +47,17 @@ int fatfs_stat_path(void *state, char *path, struct nk_fs_stat *st)
 
 void *fatfs_create_file(void *state, char *path)
 {
-    DEBUG_PRINT("fatfs_create_file\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_create_file\n");
+    store_fatfs_state(state);
     FIL* file = malloc(sizeof(FIL));
     if (!file) {
-        ERROR_PRINT("fatfs_create_file: malloc failed\n");
+        ERROR("fatfs_create_file: malloc failed\n");
         return NULL;
     }
 
     FRESULT res = f_open(file, path, FA_CREATE_NEW | FA_READ | FA_WRITE);
     if (res != FR_OK) {
-        ERROR_PRINT("fatfs_create_file: f_open failed with error %d\n", res);
+        ERROR("fatfs_create_file: f_open failed with error %d\n", res);
         return NULL;
     }
     return file;
@@ -63,11 +65,12 @@ void *fatfs_create_file(void *state, char *path)
 
 int fatfs_create_dir(void *state, char *path)
 {
-    DEBUG_PRINT("fatfs_create_dir\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_create_dir\n");
+        store_fatfs_state(state);
+
     FRESULT res = f_mkdir(path);
     if (res != FR_OK) {
-        ERROR_PRINT("fatfs_create_dir: f_mkdir failed with error %d\n", res);
+        ERROR("fatfs_create_dir: f_mkdir failed with error %d\n", res);
         return -1;
     }
     return 0;
@@ -76,11 +79,11 @@ int fatfs_create_dir(void *state, char *path)
 int fatfs_exists(void *state, char *path)
 {
 
-    fatfs_global_state = state;
+    store_fatfs_state(state);
     FRESULT res = f_stat(path, NULL);
-    DEBUG_PRINT("fatfs_exists res = %d\n", res);
+    DEBUG("fatfs_exists res = %d\n", res);
     if(res != FR_OK && res != FR_NO_FILE && res != FR_NO_PATH) {
-        ERROR_PRINT("fatfs_exists: f_stat failed with error %d\n", res);
+        ERROR("fatfs_exists: f_stat failed with error %d\n", res);
         return 0;
     }
     return res == FR_OK;
@@ -88,24 +91,24 @@ int fatfs_exists(void *state, char *path)
 
 int fatfs_remove(void *state, char *path)
 {
-    DEBUG_PRINT("fatfs_remove\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_remove\n");
+    store_fatfs_state(state);
     FRESULT res = f_unlink(path);
     return res;
 }
 
 void *fatfs_open(void *state, char *path)
 {
-    DEBUG_PRINT("fatfs_open!\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_open!\n");
+    store_fatfs_state(state);
     FIL* file = malloc(sizeof(FIL));
     if (!file) {
-        ERROR_PRINT("fatfs_open: malloc failed\n");
+        ERROR("fatfs_open: malloc failed\n");
         return NULL;
     }
     FRESULT res = f_open(file, path, FA_READ | FA_WRITE);
     if(res != FR_OK) {
-        ERROR_PRINT("fatfs_open: f_open failed with error %d\n", res);
+        ERROR("fatfs_open: f_open failed with error %d\n", res);
         return NULL;
     }
     return file;
@@ -113,18 +116,18 @@ void *fatfs_open(void *state, char *path)
 
 int fatfs_stat(void *state, void *file, struct nk_fs_stat *st)
 {
-    DEBUG_PRINT("fatfs_stat\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_stat\n");
+    store_fatfs_state(state);
     FILINFO* fno = malloc(sizeof(FILINFO));
     if (!fno) {
-        ERROR_PRINT("fatfs_stat: malloc failed\n");
+        ERROR("fatfs_stat: malloc failed\n");
         return -1;
     }
     memset(fno, 0, sizeof(FILINFO));
 
     FRESULT res = f_stat(file, fno);
     if (res != FR_OK) {
-        ERROR_PRINT("fatfs_stat: f_stat failed with error %d\n", res);
+        ERROR("fatfs_stat: f_stat failed with error %d\n", res);
         return -1;
     }
 
@@ -136,8 +139,8 @@ int fatfs_stat(void *state, void *file, struct nk_fs_stat *st)
 
 int fatfs_truncate(void *state, void *file, off_t len)
 {
-    DEBUG_PRINT("fatfs_truncate\n");
-    fatfs_global_state = state;
+    DEBUG("fatfs_truncate\n");
+    store_fatfs_state(state);
     FRESULT res = f_truncate(file);
     if (res != FR_OK) {
         ERROR("fatfs_truncate: f_truncate failed with error %d\n", res);
@@ -150,11 +153,11 @@ void fatfs_close(void *state, void *file)
 {
     fatfs_state* s = (fatfs_state*)state;
     struct nk_block_dev *dev = s->dev;
-    DEBUG_PRINT("dev->state = %p\n", dev->dev.state);
-    fatfs_global_state = state;
-    DEBUG_PRINT("-----fatfs_close-----\n");
+    DEBUG("dev->state = %p\n", dev->dev.state);
+    store_fatfs_state(state);
+    DEBUG("-----fatfs_close-----\n");
     FRESULT res = f_close(file);
-    DEBUG_PRINT("-----testfs1-----\n");
+    DEBUG("-----testfs1-----\n");
 
     if (res != FR_OK) {
         ERROR("fatfs_close: f_close failed with error %d\n", res);
@@ -164,10 +167,10 @@ void fatfs_close(void *state, void *file)
 
 ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
 {
-    DEBUG_PRINT("fatfs_read offset = %d, n = %d\n", offset, n);
-    DEBUG_PRINT("fp->obj.objsize = %d\n", ((FIL*)file)->obj.objsize);
-    DEBUG_PRINT("fp = %p\n", file);
-    fatfs_global_state = state;
+    DEBUG("fatfs_read offset = %d, n = %d\n", offset, n);
+    DEBUG("fp->obj.objsize = %d\n", ((FIL*)file)->obj.objsize);
+    DEBUG("fp = %p\n", file);
+    store_fatfs_state(state);
 
     int bytes_read = 0;
     FIL* f = (FIL*)file;
@@ -183,9 +186,9 @@ ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
 
 ssize_t fatfs_write(void *state, void *file, void *src, off_t offset, size_t n)
 {
-    fatfs_global_state = state;
+    store_fatfs_state(state);
     int bytes_written = 0;
-    fatfs_global_state = state;
+    store_fatfs_state(state);
     FRESULT res = f_write(file, src, n, &bytes_written);
     if (res != FR_OK) {
         ERROR("fatfs_write: f_write failed with error %d\n", res);
@@ -323,10 +326,7 @@ int nk_fs_fatfs_attach(char *devname, char *fsname, int readonly)
         return -1;
     }
     
-    struct fatfs_state *s = malloc(sizeof(*s));
-    fatfs_global_state = s;
-    
-
+    struct fatfs_state *s = malloc(sizeof(*s));  
     
     if (!s) { 
         ERROR("Cannot allocate space for fs %s\n", fsname);
@@ -354,7 +354,27 @@ int nk_fs_fatfs_attach(char *devname, char *fsname, int readonly)
     }
 
 
-    FRESULT res = f_mount(s->fatfs, "", 1);
+    // Associate the new mounted volume (and state) with 1 of the 3 possible physical drives
+    // Note: this can be increased up to 10 by changing the FF_VOLUMES macro in ffconf.h
+    // and then changing the logic below. Also, each physical drive is mapped to a logical drive
+    char* d_num;
+    if (fatfs_global_state[0] == NULL){
+        d_num = "0:";
+        fatfs_global_state[0] = s;
+    } else if (fatfs_global_state[1] == NULL){
+        d_num = "1:";
+        fatfs_global_state[1] = s;
+    } else if (fatfs_global_state[2] == NULL){
+        d_num = "2:";
+        fatfs_global_state[2] = s;
+    } else {
+        ERROR("fatfs_attach: too many filesystems\n");
+        return -1;
+    }
+
+    DEBUG("mounting to d_num %s\n", d_num);
+
+    FRESULT res = f_mount(s->fatfs, d_num, 1);
     if (res != FR_OK) {
         ERROR("Unable to mount filesystem %s with error %d\n", fsname, res);
         free(s);
@@ -370,7 +390,8 @@ int nk_fs_fatfs_attach(char *devname, char *fsname, int readonly)
 
     INFO("filesystem %s on device %s is attached (%s)\n", fsname, devname, readonly ?  "readonly" : "read/write");
 
-#if 1
+#if 0
+    // basic tests of the filesystem
     fatfs_test(s);
 #endif    
 
@@ -380,6 +401,15 @@ int nk_fs_fatfs_attach(char *devname, char *fsname, int readonly)
 int nk_fs_fatfs_detach(char *fsname)
 {
     struct nk_fs *fs = nk_fs_find(fsname);
+
+    // clear the global state when the filesystem is detached
+    for (int i = 0; i < 3; i++){
+        if (fatfs_global_state[i] != NULL && ((fatfs_state*)fatfs_global_state[i])->fs == fs){
+            free(fatfs_global_state[i]);
+            fatfs_global_state[i] = NULL;
+            return 0;
+        }
+    }
     if (!fs) {
         return -1;
     } else {

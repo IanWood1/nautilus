@@ -14,7 +14,7 @@
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
 #include "fatfs.h"
-extern void* fatfs_global_state;
+extern void* fatfs_global_state[3];
 
 typedef struct fatfs_pdrv_to_blkdev{
     int pdrv;
@@ -39,7 +39,9 @@ typedef struct fatfs_state{
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
-
+fatfs_state* get_fatfs_global_state(BYTE pdrv){
+	return (fatfs_state*)fatfs_global_state[pdrv];
+}
 
 
 DSTATUS disk_status (
@@ -47,33 +49,7 @@ DSTATUS disk_status (
 )
 {
 	DEBUG("disk_status\n");
-	DSTATUS stat;
-	int result;
 	return 0;
-
-	switch (pdrv) {
-	case DEV_RAM :
-		// result = RAM_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_MMC :
-		// result = MMC_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_USB :
-		// result = USB_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-	}
-	return STA_NOINIT;
 }
 
 
@@ -87,34 +63,7 @@ DSTATUS disk_initialize (
 )
 {
 	DEBUG("disk_initialize\n");
-	DSTATUS stat;
-	int result;
-
 	return 0;
-
-	switch (pdrv) {
-	case DEV_RAM :
-		// result = RAM_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_MMC :
-		// result = MMC_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_USB :
-		// result = USB_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
-	}
-	return STA_NOINIT;
 }
 
 
@@ -132,45 +81,13 @@ DRESULT disk_read (
 {
 	DRESULT res;
 	int result;
-	fatfs_state *s = (fatfs_state*)fatfs_global_state;
-
-	DEBUG_PRINT("disk_read: pdrv=%d, sector=%d, count=%d\n", pdrv, sector, count);
+	fatfs_state *s = get_fatfs_global_state(pdrv);
+	DEBUG("disk_read: pdrv=%d, sector=%d, count=%d\n", pdrv, sector, count);
 	if(nk_block_dev_read(s->dev, sector, count, buff, NK_DEV_REQ_BLOCKING, 0, 0) != 0){
-		ERROR_PRINT("disk_read: nk_block_dev_read failed\n");
+		ERROR("disk_read: nk_block_dev_read failed\n");
 		return RES_ERROR;
 	}
 	return RES_OK;
-
-	switch (pdrv) {
-	case DEV_RAM :
-		// translate the arguments here
-
-		// result = RAM_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_MMC :
-		// translate the arguments here
-
-		// result = MMC_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_USB :
-		// translate the arguments here
-
-		// result = USB_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-	}
-
-	return RES_PARERR;
 }
 
 
@@ -190,56 +107,18 @@ DRESULT disk_write (
 {
 	DRESULT res;
 	int result;
-	DEBUG_PRINT("disk_write, pdrv=%d, sector=%d, count=%d\n , buff=%p\n, state=%p\n", pdrv, sector, count, buff, fatfs_global_state);
+	DEBUG("disk_write, pdrv=%d, sector=%d, count=%d\n , buff=%p\n, state=%p\n", pdrv, sector, count, buff, fatfs_global_state);
 
-	fatfs_state *s = (fatfs_state*)fatfs_global_state;
-
-	DEBUG_PRINT("HERE, s = %p, s->dev = %p\n, buff = %p\n", s, s->dev, buff);
-	DEBUG_PRINT("------------s->dev->dev = %p\n", s->dev->dev.state);
+	fatfs_state *s = get_fatfs_global_state(pdrv);
 
 	int pass =nk_block_dev_write(s->dev, sector, count, (void*)buff, NK_DEV_REQ_BLOCKING, 0, 0);
-	DEBUG_PRINT("HERE\n");
+	DEBUG("HERE\n");
 
 	if (pass != 0){
 		ERROR_PRINT("disk_write: nk_block_dev_write failed\n");
 		return RES_ERROR;
-	}
-	DEBUG_PRINT("HERE\n");
-
-	
+	}	
 	return RES_OK;
-
-
-	switch (pdrv) {
-	case DEV_RAM :
-		// translate the arguments here
-
-		// result = RAM_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_MMC :
-		// translate the arguments here
-
-		// result = MMC_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_USB :
-		// translate the arguments here
-
-		// result = USB_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-	}
-
-	return RES_PARERR;
 }
 
 #endif
@@ -256,31 +135,7 @@ DRESULT disk_ioctl (
 )
 {
 	DEBUG("disk_ioctl, command = %d\n", cmd);
-	DRESULT res;
-	int result;
-
+	// only use is to sync but nk forces disk to block so no need to sync
 	return RES_OK;
-
-	switch (pdrv) {
-	case DEV_RAM :
-
-		// Process of the command for the RAM drive
-
-		return res;
-
-	case DEV_MMC :
-
-		// Process of the command for the MMC/SD card
-
-		return res;
-
-	case DEV_USB :
-
-		// Process of the command the USB drive
-
-		return res;
-	}
-
-	return RES_PARERR;
 }
 

@@ -14,7 +14,7 @@ int nk_fs_fatfs_attach(char *devname, char *fsname, int readonly);
 int nk_fs_fatfs_detach(char *fsname);
 
 
-extern void* fatfs_global_state;
+extern void* fatfs_global_state[3];
 
 
 
