@@ -167,9 +167,8 @@ ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
     store_fatfs_state(state);
 
     int bytes_read = 0;
-    FIL* f = (FIL*)file;
-    f->fptr = offset; // set file pointer to offset
-    FRESULT res = f_read(f, dest, n, &bytes_read);
+    ((FIL*)file)->fptr = offset; // set file pointer to offset
+    FRESULT res = f_read(file, dest, n, &bytes_read);
     if (res != FR_OK) {
         ERROR("fatfs_read: f_read failed with error %d\n", res);
         return -1;
@@ -183,6 +182,7 @@ ssize_t fatfs_write(void *state, void *file, void *src, off_t offset, size_t n)
     store_fatfs_state(state);
     int bytes_written = 0;
     store_fatfs_state(state);
+    ((FIL*)file)->fptr = offset; // set file pointer to offset
     FRESULT res = f_write(file, src, n, &bytes_written);
     if (res != FR_OK) {
         ERROR("fatfs_write: f_write failed with error %d\n", res);
