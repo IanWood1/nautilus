@@ -164,7 +164,6 @@ void fatfs_close(void *state, void *file)
 
 ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
 {
-    DEBUG("fp = %p\n", file);
     store_fatfs_state(state);
 
     int bytes_read = 0;
