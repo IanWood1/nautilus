@@ -16,19 +16,9 @@ typedef struct fatfs_state{
 
 void* fatfs_global_state[3] = {NULL, NULL, NULL};
 
-void store_fatfs_state(void* state) {
-    fatfs_state *fs_state = (fatfs_state*)state;
-    BYTE pdrv = fs_state->fatfs->pdrv;
-    fatfs_global_state[pdrv] = state;
-}
-
-
 int fatfs_stat_path(void *state, char *path, struct nk_fs_stat *st)
 {
     DEBUG("fatfs_stat_path\n");
-    store_fatfs_state(state);
-    
-
     FILINFO* fno = malloc(sizeof(FILINFO));
     if (!fno) {
         ERROR("fatfs_stat_path: malloc failed\n");
@@ -48,7 +38,6 @@ int fatfs_stat_path(void *state, char *path, struct nk_fs_stat *st)
 void *fatfs_create_file(void *state, char *path)
 {
     DEBUG("fatfs_create_file\n");
-    store_fatfs_state(state);
     FIL* file = malloc(sizeof(FIL));
     if (!file) {
         ERROR("fatfs_create_file: malloc failed\n");
@@ -66,8 +55,6 @@ void *fatfs_create_file(void *state, char *path)
 int fatfs_create_dir(void *state, char *path)
 {
     DEBUG("fatfs_create_dir\n");
-        store_fatfs_state(state);
-
     FRESULT res = f_mkdir(path);
     if (res != FR_OK) {
         ERROR("fatfs_create_dir: f_mkdir failed with error %d\n", res);
@@ -78,8 +65,6 @@ int fatfs_create_dir(void *state, char *path)
 
 int fatfs_exists(void *state, char *path)
 {
-
-    store_fatfs_state(state);
     FRESULT res = f_stat(path, NULL);
     DEBUG("fatfs_exists res = %d\n", res);
     if(res != FR_OK && res != FR_NO_FILE && res != FR_NO_PATH) {
@@ -92,7 +77,6 @@ int fatfs_exists(void *state, char *path)
 int fatfs_remove(void *state, char *path)
 {
     DEBUG("fatfs_remove\n");
-    store_fatfs_state(state);
     FRESULT res = f_unlink(path);
     return res;
 }
@@ -100,7 +84,6 @@ int fatfs_remove(void *state, char *path)
 void *fatfs_open(void *state, char *path)
 {
     DEBUG("fatfs_open!\n");
-    store_fatfs_state(state);
     FIL* file = malloc(sizeof(FIL));
     if (!file) {
         ERROR("fatfs_open: malloc failed\n");
@@ -117,7 +100,6 @@ void *fatfs_open(void *state, char *path)
 int fatfs_stat(void *state, void *file, struct nk_fs_stat *st)
 {
     DEBUG("fatfs_stat\n");
-    store_fatfs_state(state);
     FILINFO* fno = malloc(sizeof(FILINFO));
     if (!fno) {
         ERROR("fatfs_stat: malloc failed\n");
@@ -139,8 +121,6 @@ int fatfs_stat(void *state, void *file, struct nk_fs_stat *st)
 
 int fatfs_truncate(void *state, void *file, off_t len)
 {
-    DEBUG("fatfs_truncate\n");
-    store_fatfs_state(state);
     FRESULT res = f_truncate(file);
     if (res != FR_OK) {
         ERROR("fatfs_truncate: f_truncate failed with error %d\n", res);
@@ -151,9 +131,6 @@ int fatfs_truncate(void *state, void *file, off_t len)
 
 void fatfs_close(void *state, void *file)
 {
-    fatfs_state* s = (fatfs_state*)state;
-    struct nk_block_dev *dev = s->dev;
-    store_fatfs_state(state);
     DEBUG("-----fatfs_close-----\n");
     FRESULT res = f_close(file);
     if (res != FR_OK) {
@@ -164,8 +141,6 @@ void fatfs_close(void *state, void *file)
 
 ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
 {
-    store_fatfs_state(state);
-
     int bytes_read = 0;
     ((FIL*)file)->fptr = offset; // set file pointer to offset
     FRESULT res = f_read(file, dest, n, &bytes_read);
@@ -179,9 +154,8 @@ ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
 
 ssize_t fatfs_write(void *state, void *file, void *src, off_t offset, size_t n)
 {
-    store_fatfs_state(state);
     int bytes_written = 0;
-    
+
     ((FIL*)file)->fptr = offset; // set file pointer to offset
     FRESULT res = f_write(file, src, n, &bytes_written);
     if (res != FR_OK) {
