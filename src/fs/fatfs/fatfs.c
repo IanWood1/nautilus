@@ -181,7 +181,7 @@ ssize_t fatfs_write(void *state, void *file, void *src, off_t offset, size_t n)
 {
     store_fatfs_state(state);
     int bytes_written = 0;
-    store_fatfs_state(state);
+    
     ((FIL*)file)->fptr = offset; // set file pointer to offset
     FRESULT res = f_write(file, src, n, &bytes_written);
     if (res != FR_OK) {
