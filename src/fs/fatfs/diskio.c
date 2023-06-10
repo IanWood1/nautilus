@@ -83,7 +83,14 @@ DRESULT disk_read (
 	int result;
 	fatfs_state *s = get_fatfs_global_state(pdrv);
 	DEBUG("disk_read: pdrv=%d, sector=%d, count=%d\n", pdrv, sector, count);
-	if(nk_block_dev_read(s->dev, sector, count, buff, NK_DEV_REQ_BLOCKING, 0, 0) != 0){
+
+	if (FF_MIN_SS != FF_MAX_SS){
+		ERROR("disk_read: the following code does not support variable sector size\n");
+		return RES_ERROR;
+	}
+	uint64_t block_num = (sector * FF_MAX_SS) / s->chars.block_size;
+	uint64_t block_count = (FF_MAX_SS) / s->chars.block_size;
+	if(nk_block_dev_read(s->dev, block_num, block_count, buff, NK_DEV_REQ_BLOCKING, 0, 0) != 0){
 		ERROR("disk_read: nk_block_dev_read failed\n");
 		return RES_ERROR;
 	}
@@ -110,8 +117,13 @@ DRESULT disk_write (
 	DEBUG("disk_write, pdrv=%d, sector=%d, count=%d\n , buff=%p\n, state=%p\n", pdrv, sector, count, buff, fatfs_global_state);
 
 	fatfs_state *s = get_fatfs_global_state(pdrv);
-
-	int pass =nk_block_dev_write(s->dev, sector, count, (void*)buff, NK_DEV_REQ_BLOCKING, 0, 0);
+	if (FF_MIN_SS != FF_MAX_SS){
+		ERROR("disk_read: the following code does not support variable sector size\n");
+		return RES_ERROR;
+	}
+	uint64_t block_num = (sector * FF_MAX_SS) / s->chars.block_size;
+	uint64_t block_count = (FF_MAX_SS) / s->chars.block_size;
+	int pass =nk_block_dev_write(s->dev, block_num, block_count, (void*)buff, NK_DEV_REQ_BLOCKING, 0, 0);
 	DEBUG("HERE\n");
 
 	if (pass != 0){

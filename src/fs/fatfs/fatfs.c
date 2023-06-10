@@ -358,7 +358,7 @@ int nk_fs_fatfs_attach(char *devname, char *fsname, int readonly)
 
     INFO("filesystem %s on device %s is attached (%s)\n", fsname, devname, readonly ?  "readonly" : "read/write");
 
-#if 0
+#if 1
     // basic tests of the filesystem
     fatfs_test(s);
 #endif    
