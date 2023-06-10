@@ -153,12 +153,9 @@ void fatfs_close(void *state, void *file)
 {
     fatfs_state* s = (fatfs_state*)state;
     struct nk_block_dev *dev = s->dev;
-    DEBUG("dev->state = %p\n", dev->dev.state);
     store_fatfs_state(state);
     DEBUG("-----fatfs_close-----\n");
     FRESULT res = f_close(file);
-    DEBUG("-----testfs1-----\n");
-
     if (res != FR_OK) {
         ERROR("fatfs_close: f_close failed with error %d\n", res);
         return;
@@ -167,8 +164,6 @@ void fatfs_close(void *state, void *file)
 
 ssize_t fatfs_read(void *state, void *file, void *dest, off_t offset, size_t n)
 {
-    DEBUG("fatfs_read offset = %d, n = %d\n", offset, n);
-    DEBUG("fp->obj.objsize = %d\n", ((FIL*)file)->obj.objsize);
     DEBUG("fp = %p\n", file);
     store_fatfs_state(state);
 
